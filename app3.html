@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Where Is My Bus</title>
+
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #f4f6f8;
+    }
+
+    /* Header */
+    header {
+      background: #0d47a1;
+      color: white;
+      padding: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    header h2 {
+      margin: 0;
+    }
+
+    .account {
+      font-size: 14px;
+    }
+
+    /* Container */
+    .container {
+      padding: 15px;
+    }
+
+    /* Inputs */
+    input,
+    button {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      font-size: 15px;
+    }
+
+    button {
+      background: #0d47a1;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #08306b;
+    }
+
+    .mic {
+      background: #d32f2f;
+    }
+
+    /* Map */
+    .map iframe {
+      width: 100%;
+      height: 250px;
+      border-radius: 8px;
+      border: none;
+    }
+
+    /* History */
+    .history {
+      background: white;
+      padding: 10px;
+      margin-top: 10px;
+      border-radius: 6px;
+    }
+
+    .history h3 {
+      margin-top: 0;
+    }
+
+    .history p {
+      font-size: 14px;
+      border-bottom: 1px solid #ddd;
+      padding: 4px 0;
+    }
+
+    select {
+      width: 100%;
+      padding: 10px;
+      margin: 6px 0;
+      font-size: 15px;
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <h2>🚌 Where Is My Bus</h2>
+    <div class="account">
+      user login account
+    </div>
+  </header>
+
+  <div class="container">
+
+    <input type="text" id="busNumber" placeholder="Enter Bus Number">
+
+    <input type="text" id="fromStop" placeholder="From Bus Stop">
+
+    <input type="text" id="toStop" placeholder="To Bus Stop">
+
+    <button onclick="findBus()">Find Buses</button>
+    <button class="mic" onclick="voiceSearch()">🎤 Voice Search</button>
+    <label>From Bus Stand</label>
+    <select id="fromStop">
+      <option value="">Select Bus Stand</option>
+      <option>Howrah Station</option>
+      <option>Esplanade</option>
+      <option>Salt Lake Sector V</option>
+      <option>Dum Dum</option>
+    </select>
+
+    <label>To Bus Stand</label>
+    <select id="toStop">
+      <option value="">Select Bus Stand</option>
+      <option>Howrah Station</option>
+      <option>Esplanade</option>
+      <option>Salt Lake Sector V</option>
+      <option>Dum Dum</option>
+    </select>
+
+
+    <div class="map">
+      <iframe src="https://maps.google.com/maps?q=India&z=13&output=embed">
+      </iframe>
+    </div>
+
+    <div class="history">
+      <h3>🔍 Search History</h3>
+      <div id="historyList"></div>
+    </div>
+    <div class="history">
+  <h3>🚌 Bus Transfer Result</h3>
+  <div id="result"></div>
+</div>
+
+
+  </div>
+  <script>
+    const standLocations = {
+      "Howrah Station": "Howrah Station Kolkata",
+      "Esplanade": "Esplanade Kolkata",
+      "Salt Lake Sector V": "Sector V Salt Lake Kolkata",
+      "Dum Dum": "Dum Dum Kolkata"
+    };
+
+    fromStop.addEventListener("change", () => {
+      const place = standLocations[fromStop.value];
+      if (place) {
+        document.querySelector("iframe").src =
+          `https://maps.google.com/maps?q=${place}&z=14&output=embed`;
+      }
+    });
+  </script>
+
+
+  <script>
+    function findBus() {
+      const bus = busNumber.value.trim();
+      const from = fromStop.value.trim();
+      const to = toStop.value.trim();
+      const busRoutes = {
+        "215": ["Howrah Station", "Esplanade"],
+        "30B": ["Esplanade", "Dum Dum"],
+        "12A": ["Howrah Station", "Salt Lake Sector V"],
+        "AC10": ["Salt Lake Sector V", "Dum Dum"]
+      };
+
+
+
+      if (bus === "" || from === "" || to === "") {
+        alert("Please fill all fields");
+        return;
+      }
+
+      const record = `Bus ${bus} : ${from} ➜ ${to}`;
+      saveHistory(record);
+      alert("Finding " + record);
+    }
+
+    function saveHistory(data) {
+      let history = JSON.parse(localStorage.getItem("busSearch")) || [];
+      history.unshift(data);
+      localStorage.setItem("busSearch", JSON.stringify(history));
+      loadHistory();
+    }
+
+    function loadHistory() {
+      let history = JSON.parse(localStorage.getItem("busSearch")) || [];
+      historyList.innerHTML = "";
+      history.forEach(item => {
+        historyList.innerHTML += `<p>${item}</p>`;
+      });
+    }
+
+    /* Voice Search */
+    function voiceSearch() {
+      if (!('webkitSpeechRecognition' in window)) {
+        alert("Voice search not supported");
+        return;
+      }
+      const recognition = new webkitSpeechRecognition();
+      recognition.lang = "en-IN";
+      recognition.start();
+
+      recognition.onresult = function (e) {
+        fromStop.value = e.results[0][0].transcript;
+      };
+    }
+    function findBus() {
+      const bus = busNumber.value.trim();
+      const from = fromStop.value;
+      const to = toStop.value;
+
+      if (!from || !to) {
+        alert("Please select bus stands");
+        return;
+      }
+      function showResult(direct, transfer, from, to){
+  result.innerHTML = "";
+
+  if (direct.length > 0) {
+    result.innerHTML = `<p>✅ Direct Bus Available:</p>`;
+    direct.forEach(b => {
+      result.innerHTML += `<p>🚌 Bus ${b}: ${from} ➜ ${to}</p>`;
+    });
+  }
+  else if (transfer.length > 0) {
+    result.innerHTML = `<p>🔁 Transfer Required:</p>`;
+    transfer.forEach(t => {
+      result.innerHTML += `
+        <p>
+          🚌 Bus ${t.bus1}: ${from} ➜ <b>${t.via}</b><br>
+          🔄 Change Bus<br>
+          🚌 Bus ${t.bus2}: ${t.via} ➜ ${to}
+        </p>
+      `;
+    });
+  }
+  else {
+    result.innerHTML = `<p>❌ No route found</p>`;
+  }
+}
+
+
+      let direct = [];
+      let transfer = [];
+
+      // Check direct buses
+      for (let b in busRoutes) {
+        const route = busRoutes[b];
+        if (route.includes(from) && route.includes(to)) {
+          direct.push(b);
+        }
+      }
+
+      // If no direct, check transfer
+      if (direct.length === 0) {
+        for (let b1 in busRoutes) {
+          for (let b2 in busRoutes) {
+            if (b1 !== b2) {
+              const commonStop = busRoutes[b1].find(stop =>
+                busRoutes[b2].includes(stop)
+              );
+
+              if (
+                busRoutes[b1].includes(from) &&
+                busRoutes[b2].includes(to) &&
+                commonStop
+              ) {
+                transfer.push({
+                  bus1: b1,
+                  bus2: b2,
+                  via: commonStop
+                });
+              }
+            }
+          }
+        }
+      }
+
+      showResult(direct, transfer, from, to);
+    }
+
+
+    loadHistory();
+  </script>
+
+</body>
+
+</html>
